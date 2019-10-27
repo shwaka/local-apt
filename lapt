@@ -12,7 +12,7 @@ function get_filename() {
     # https://askubuntu.com/questions/785114/how-to-get-the-download-file-name-of-apt-get-download
     local tempdir=.lapt_temp
     if [ -e $tempdir ]; then
-        $log "[lapt] Error: $(pwd)/$tempdir already exists. Remove it."
+        $log "[Error]: $(pwd)/$tempdir already exists. Remove it."
         return 1
     fi
     (
@@ -46,13 +46,13 @@ function install_a_package() {
     cd "$LAPT_DOWNLOADS"
     local filename=$(get_filename $package_name)
     if [ -z "$filename" ]; then
-        $log "[lapt] Package not found: $package_name" >&2
+        $log "[Error] Package not found: $package_name" >&2
         return 1
     fi
     if [ -e $filename ]; then
-        $log "[lapt] Using ${filename} which already exists"
+        $log "Using ${filename} which already exists"
     else
-        $log "[lapt] Downloading ${filename}..."
+        $log "Downloading ${filename}..."
         apt-get download $package_name
     fi
     install_dependent_packages $filename || return 1
@@ -65,9 +65,9 @@ function install_dependent_packages() {
     local filename=$1
     local dep_str=$(dpkg -I "$filename" |
                         grep "^ *Depends:" |
-                        sed -e "s/^ *Depends://")
+                        sed -e "s/^ *Depends: *//")
     local package_name=$(ldpkg get_package_name "$filename")
-    $log -e "[lapt] Dependencies for $package_name:\n  $dep_str"
+    $log -e "Dependencies for $package_name:\n  $dep_str"
     local dep_array
     IFS=',' read -ra dep_array <<< "$dep_str"
     if [ -n "${dep_array+x}" ]; then
@@ -115,7 +115,7 @@ function lapt_install() {
     # lapt_install " libtiff5 (= 4.0.9-5ubuntu0.3) "
     # lapt_install "libc6-dev | libc-dev"
     local package_candidates=$1
-    $log "[lapt] Installing $package_candidates"
+    $log "[Begin] Installing $package_candidates"
     local package_array
     # https://stackoverflow.com/questions/918886/how-do-i-split-a-string-on-a-delimiter-in-bash
     IFS='|' read -ra package_array <<< "$package_candidates"
@@ -132,12 +132,12 @@ function lapt_install() {
         install_a_package $package_name && {
             # 一つでも install に成功したらそこで(正常)終了
             set -e
-            $log "[lapt] Successfully installed $package_name"
+            $log "[End] Successfully installed $package_name"
             return 0
         }
     done
     # 全ての候補で install に失敗したらエラーを吐く
-    $log "[lapt] failed to install any of the following\n  $package_candidates"
+    $log "[End] failed to install any of the following\n  $package_candidates"
     return 1
 }
 
