@@ -1,0 +1,171 @@
+#! /bin/bash
+
+set -eu
+
+lapt_dir=$(dirname $(readlink -f $0))
+log=$lapt_dir/lapt-log
+
+LDPKG_DIR=$HOME/.ldpkg
+if [ ! -d "$LDPKG_DIR" ]; then
+    mkdir -p "$LDPKG_DIR"
+fi
+INSTALLED_LIST_FILE=$LDPKG_DIR/installed_packages
+if [ ! -e "$INSTALLED_LIST_FILE" ]; then
+    touch "$INSTALLED_LIST_FILE"
+fi
+
+function get_package_name() {
+    local debfile=$1
+    dpkg --info "$debfile" | grep "Package:" |
+        sed -e "s/^ *Package: *//"
+}
+
+function is_installed_locally() {
+    local package_name=$1
+    cat "$INSTALLED_LIST_FILE" |
+        grep '^'"$package_name"'$' > /dev/null 2> /dev/null
+}
+
+function is_installed_globally() {
+    local package_name=$1
+    dpkg -s $package_name > /dev/null 2> /dev/null
+    # 参考:
+    # https://askubuntu.com/questions/423355/how-do-i-check-if-a-package-is-installed-on-my-server のベストアンサーに対するコメント
+    # → https://github.com/bitrise-io/bitrise/issues/433
+}
+
+function is_installed() {
+    local package_name=$1
+    is_installed_locally $package_name ||
+        is_installed_globally $package_name
+}
+
+function mark_installed() {
+    local package_name=$1
+    if ! is_installed_locally $package_name; then
+        echo $package_name >> "$INSTALLED_LIST_FILE"
+    fi
+}
+
+function fix_links() {
+    local root_orig_rel=$1
+    local root_dest=$2          # 最終的なコピー先
+    local root_orig=$(cd $root_orig_rel ; pwd -P)
+    local unfixed_links=""
+    for link in $(find "$root_orig" -type l); do
+        if [ ! -e "$link" ]; then
+            # symlink が壊れていたら
+            local link_target=$(readlink -m $link)
+            # echo -e "Broken link $link\n  to $link_target"
+            local link_target_rel=$(realpath -m --relative-to="$root_orig" "$link_target")
+            local alternative_link_target=/$link_target_rel
+            local target_in_dest=$root_dest/$link_target_rel
+            if [ -e $target_in_dest ]; then
+                # コピー先にもともとあるなら問題ない
+                :
+            elif [ -e "$alternative_link_target" ]; then
+                # /usr/lib 的なところにリンク先を見つけた場合
+                # $log -e "Fix link: $link"
+                ln -nfs "$alternative_link_target" "$link"
+            else
+                # リンクの修正先が分からない場合
+                # 後でまとめてエラーを吐く
+                unfixed_links="${unfixed_links}  ${link}\n"
+            fi
+        fi
+    done
+    if [ -n "$unfixed_links" ]; then
+        $log "[ldpkg] Error: The following links cannot be fixed:"
+        $log "$unfixed_links"
+        exit 1
+    fi
+}
+
+function fix_pkgconfig() {
+    # $2 ($root_dest) 以下にある *.pc の中のパスを書き換える
+    local root_orig=$1
+    local root_dest=$2
+    for pc_file in $(find "$root_orig" -name "*.pc"); do
+        sed -i -e "s:=/:=$LDPKG_DIR/:g" "$pc_file"
+    done
+}
+
+function ldpkg_install() {
+    local debfile=$1
+    if [ ! -e "$debfile" ]; then
+        $log "[ldpkg] .deb file not found: $debfile" >&2
+        exit 1
+    fi
+    local package_name=$(get_package_name "$debfile")
+    if is_installed $package_name && [ "${FORCE_INSTALL-}" != true ]; then
+        ldpkg_show $package_name
+        return 0
+    fi
+    # TODO: check dependency (not install)
+    $log "Installing $debfile..."
+    local tempdir="$LDPKG_DIR"/.ldpkg_temp
+    # ↑下に2つある rm -r に注意
+    if [ -e "$tempdir" ]; then
+        # 前回の ldpkg で fix_links に失敗していると，
+        # $tempdir が削除されずに残ったままになっている．
+        # それをエラーにすると面倒なので，勝手に削除することにする
+        rm -r "$tempdir"
+        # echo "[ldpkg] Error: ${tempdir} already exists. Remove it." >&2
+        # return 1
+    fi
+    mkdir "$tempdir"
+    dpkg -x "$debfile" "$tempdir"
+    fix_links "$tempdir" "$LDPKG_DIR"
+    fix_pkgconfig "$tempdir" "$LDPKG_DIR"
+    cp -rf "$tempdir"/* "$LDPKG_DIR"/
+    rm -r "$tempdir"
+    # ↑要注意だけど $tempdir は必ず .ldpkg_temp を含むから大丈夫なはず
+    mark_installed $package_name
+}
+
+function ldpkg_list() {
+    cat $INSTALLED_LIST_FILE
+}
+
+function ldpkg_is_installed() {
+    local package_name=$1
+    is_installed $package_name
+}
+
+function ldpkg_show() {
+    local package_name=$1
+    if is_installed_locally $package_name; then
+        $log "The package ${package_name} is already installed locally."
+    fi
+    if is_installed_globally $package_name; then
+        $log "The package ${package_name} is already installed globally."
+    fi
+    if ! is_installed $package_name; then
+        $log "The package ${package_name} is not installed yet."
+    fi
+}
+
+function ldpkg_get_dir() {
+    echo "$LDPKG_DIR"
+}
+
+function ldpkg_get_package_name() {
+    local debfile=$1
+    get_package_name "$debfile"
+}
+
+if [ $# = 0 ]; then
+    $log "[Error] Input command" >&2
+    exit 1
+fi
+
+command=$1
+shift
+
+if [ "$command" == finstall ]; then
+    # 主にテスト用
+    command=install
+    FORCE_INSTALL=true
+fi
+
+ldpkg_"$command" "$@"

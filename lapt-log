@@ -1,0 +1,10 @@
+#! /bin/bash
+
+# echo ${LAPT_LOG_LEVEL}
+# echo {1..$l}
+# indent=$(printf '.%.0s' {1..$l})
+IFS=''
+indent=$(perl -E 'say  " " x '${LAPT_LOG_LEVEL-0})
+echo -e "$@" | while read line; do
+    echo "${indent}${line}" >&2
+done
