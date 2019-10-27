@@ -12,8 +12,12 @@ function get_filename() {
     # https://askubuntu.com/questions/785114/how-to-get-the-download-file-name-of-apt-get-download
     local tempdir=.lapt_temp
     if [ -e $tempdir ]; then
-        $log "[Error]: $(pwd)/$tempdir already exists. Remove it."
-        return 1
+        if [ -d $tempdir -a -z "$(ls -A "$tempdir")" ]; then
+            rmdir "$tempdir"
+        else
+            $log "[Error]: $(pwd)/$tempdir already exists. Remove it."
+            return 1
+        fi
     fi
     (
         # ファイル名が一致するものがカレントディレクトリにある場合には，
