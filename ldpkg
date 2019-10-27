@@ -5,7 +5,7 @@ set -eu
 lapt_dir=$(dirname $(readlink -f $0))
 log=$lapt_dir/lapt-log
 
-LDPKG_DIR=$HOME/.ldpkg
+LDPKG_DIR=${LDPKG_DIR-$HOME/.ldpkg}
 if [ ! -d "$LDPKG_DIR" ]; then
     mkdir -p "$LDPKG_DIR"
 fi
