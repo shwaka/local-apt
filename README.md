@@ -26,3 +26,23 @@ export LD_LIBRARY_PATH="$LDPKG_DIR/usr/lib:$LDPKG_DIR/usr/lib/x86_64-linux-gnu"
 lapt install <package-name>
 ldpkg install foo.deb
 ```
+
+# TODO
+## 無限ループの回避
+パッケージが相互に依存している場合がある．
+(e.g. `openjdk-8-jre-headless`, `ca-certificates-java`)
+インストール予定のものを記憶しておけばok．
+
+## or での依存の場合
+現状では，Depends が `hoge | fuga` のときは
+
+1. `hoge` のインストールを試みる
+2. それに失敗したら `fuga` のインストールを試みる
+
+という手順になっているが，先に「どちらかがインストール済み」かをチェックした方が良さそう
+
+## Recommends のインストール
+Depends だけじゃなくて Recommends もインストールする
+
+## virtual packages
+search virtual packages
