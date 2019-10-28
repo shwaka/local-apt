@@ -56,6 +56,11 @@ Depends だけじゃなくて Recommends もインストールする
 ## apt-file
 `apt-file` の Depends にある `perl:any` って何？
 
-## `.deb` からのインストール
-- `lapt install -d hoge.deb`
-- 依存関係は `apt` のリポジトリから取ってくる
+## 最初にインストール済みかどうかチェック
+依存関係を確認/解決する前に，そもそもの目的のパッケージがインストール済みかどうか確認する
+
+## オプション
+以下のコマンドはオプションを使って処理
+- `finstall` → `install -f`
+- `install_deb hoge.deb` → `install -d hoge.deb`
+その恩恵として， `install -f -d hoge.deb` も実装できる
