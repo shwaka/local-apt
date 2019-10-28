@@ -167,6 +167,25 @@ function lapt_install() {
     return 1
 }
 
+function lapt_list_commands() {
+    echo "${public_commands[@]}"
+}
+
+declare -a public_commands private_commands
+public_commands=(install finstall)
+private_commands=(list_commands) # available, but not shown in list_commands
+
+function accept_command() {
+    local command=$1
+    local candidate
+    for candidate in "${public_commands[@]}" "${private_commands[@]}"; do
+        if [ "$candidate" == "$command" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 if [ $# = 0 ]; then
     $log "[Error] Input command" >&2
     exit 1
@@ -174,6 +193,10 @@ fi
 
 command=$1
 shift
+
+if ! accept_command "$command"; then
+    echo "Invalid command" >&2
+fi
 
 command_install=install
 if [ "$command" == finstall ]; then
