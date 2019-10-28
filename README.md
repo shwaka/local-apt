@@ -52,3 +52,10 @@ Depends だけじゃなくて Recommends もインストールする
 具体例(`libgmpxx4ldbl`)
 - global には `2:5.1.3+dfsg-1ubuntu1` がインストール済み
 - 実際に必要なのは `2:6.1.2+dfsg-2`
+
+## apt-file
+`apt-file` の Depends にある `perl:any` って何？
+
+## `.deb` からのインストール
+- `lapt install -d hoge.deb`
+- 依存関係は `apt` のリポジトリから取ってくる
