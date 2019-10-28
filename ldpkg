@@ -86,7 +86,10 @@ function fix_pkgconfig() {
     local root_orig=$1
     local root_dest=$2
     for pc_file in $(find "$root_orig" -name "*.pc"); do
-        sed -i -e "s:=/:=$LDPKG_DIR/:g" "$pc_file"
+        if [ ! -L "$pc_file" ]; then
+            # avoid editing twice (follwoing symlink)
+            sed -i -e "s:=/:=$LDPKG_DIR/:g" "$pc_file"
+        fi
     done
 }
 
