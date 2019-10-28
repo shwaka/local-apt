@@ -8,6 +8,8 @@ log=$lapt_dir/lapt-log
 LAPT_DOWNLOADS=$($ldpkg get_dir)/lapt_downloads
 export LAPT_LOG_LEVEL=${LAPT_LOG_LEVEL-0}
 
+source $lapt_dir/color_palette
+
 function get_filename() {
     # https://askubuntu.com/questions/785114/how-to-get-the-download-file-name-of-apt-get-download
     local tempdir=.lapt_temp
@@ -15,7 +17,7 @@ function get_filename() {
         if [ -d $tempdir -a -z "$(ls -A "$tempdir")" ]; then
             rmdir "$tempdir"
         else
-            $log "[Error]: $(pwd)/$tempdir already exists. Remove it."
+            $log "${RED}[Error]${ENDCOLOR}: $(pwd)/$tempdir already exists. Remove it."
             return 1
         fi
     fi
@@ -50,7 +52,7 @@ function install_a_package() {
     cd "$LAPT_DOWNLOADS"
     local filename=$(get_filename $package_name)
     if [ -z "$filename" ]; then
-        $log "[Error] Package not found: $package_name" >&2
+        $log "{RED}[Error]${ENDCOLOR} Package not found: $package_name" >&2
         return 1
     fi
     if [ -e $filename ]; then
@@ -143,7 +145,7 @@ function lapt_install() {
     # lapt_install " libtiff5 (= 4.0.9-5ubuntu0.3) "
     # lapt_install "libc6-dev | libc-dev"
     local package_candidates=$1
-    $log "[Begin] Installing $package_candidates"
+    $log "${GREEN}[Begin]${ENDCOLOR} Installing $package_candidates"
     local package_array
     # https://stackoverflow.com/questions/918886/how-do-i-split-a-string-on-a-delimiter-in-bash
     IFS='|' read -ra package_array <<< "$package_candidates"
@@ -197,7 +199,7 @@ function accept_command() {
 }
 
 if [ $# = 0 ]; then
-    $log "[Error] Input command" >&2
+    $log "{RED}[Error]${ENDCOLOR} Input command" >&2
     exit 1
 fi
 

@@ -45,7 +45,6 @@ ldpkg install foo.deb
 Depends だけじゃなくて Recommends もインストールする
 
 ## message の改善
-- 色を付ける？
 - インストール済みの場合にもいちいち `[Begin]` `[End]` と出るのは邪魔
 
 ## version もちゃんとチェックする
