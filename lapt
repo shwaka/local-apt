@@ -101,16 +101,30 @@ function install_dependent_packages() {
     fi
 }
 
-function virtual_to_real() {
-    # virtual package name を real にする
-    # TODO: ちゃんと検索する
+# function virtual_to_real() {
+#     # virtual package name を real にする
+#     # TODO: ちゃんと検索する
+#     local package_name=$1
+#     case "$package_name" in
+#         libc-dev ) package_name=libc6-dev ;;
+#         libpng-dev ) package_name=libpng12-dev ;;
+#         libgmp10-dev ) package_name=libgmp-dev ;;
+#     esac
+#     echo $package_name
+# }
+
+function list_real_pkg() {
+    # https://serverfault.com/questions/364608/how-do-i-get-a-list-of-packages-that-provides-something-using-dpkg
     local package_name=$1
-    case "$package_name" in
-        libc-dev ) package_name=libc6-dev ;;
-        libpng-dev ) package_name=libpng12-dev ;;
-        libgmp10-dev ) package_name=libgmp-dev ;;
-    esac
-    echo $package_name
+    if apt-cache show $package_name | grep "^Package: $package_name" > /dev/null 2> /dev/null; then
+        # $package_name 自身が
+        # real な (i.e. virtual でない) パッケージの場合
+        echo $package_name
+    fi
+    # $package_name を Provide するパッケージの一覧
+    # これって再帰的にやる必要ある？
+    apt-cache showpkg $package_name |
+        awk '/Pa/, /Reverse P/ {next} {print $1 | "sort -u"}'
 }
 
 function lapt_install() {
@@ -131,17 +145,25 @@ function lapt_install() {
                                  sed -e 's/^ *//' |
                                  sed -e 's/(.*)//' |
                                  sed -e 's/ *$//')
-        package_name=$(virtual_to_real $package_name)
-        # ↓最初は set +e してたけど，install_a_package 内での処理に影響がありそうなのでやめた
-        install_a_package $package_name && {
-            # 一つでも install に成功したらそこで(正常)終了
-            set -e
-            $log "[End] Successfully installed $package_name"
-            return 0
-        }
+        # https://fumiyas.github.io/2013/12/10/lastpipe.sh-advent-calendar.html
+        # shopt -s lastpipe
+        while read real_package_name; do
+            # ↓最初は set +e してたけど，install_a_package 内での処理に影響がありそうなのでやめた
+            install_a_package $real_package_name && {
+                # 一つでも install に成功したらそこで(正常)終了
+                set -e
+                if [ $package_name == $real_package_name ]; then
+                    $log "[End] Successfully installed $real_package_name"
+                else
+                    $log "[End] Successfully installed $real_package_name, which provides $package_name"
+                fi
+                return 0
+            }
+        done < <(list_real_pkg $package_name)
     done
     # 全ての候補で install に失敗したらエラーを吐く
-    $log "[End] failed to install any of the following\n  $package_candidates"
+    $log "[End] failed to install any of the following"
+    $log "  $package_candidates"
     return 1
 }
 

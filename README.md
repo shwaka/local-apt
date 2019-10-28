@@ -43,6 +43,3 @@ ldpkg install foo.deb
 
 ## Recommends のインストール
 Depends だけじゃなくて Recommends もインストールする
-
-## virtual packages
-search virtual packages
