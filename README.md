@@ -47,3 +47,8 @@ Depends だけじゃなくて Recommends もインストールする
 ## message の改善
 - 色を付ける？
 - インストール済みの場合にもいちいち `[Begin]` `[End]` と出るのは邪魔
+
+## version もちゃんとチェックする
+具体例(`libgmpxx4ldbl`)
+- global には `2:5.1.3+dfsg-1ubuntu1` がインストール済み
+- 実際に必要なのは `2:6.1.2+dfsg-2`
