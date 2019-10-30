@@ -58,7 +58,11 @@ function lapt__install_deb() {
     local filename=$1
     lapt__install_dependent_packages "$filename" || return 1
     # ↑何故か set -e が効いてないので，|| return 1 は必須
-    ldpkg $command_install "$filename"
+    if $OPT_FORCE_INSTALL; then
+        ldpkg finstall "$filename"
+    else
+        ldpkg install "$filename"
+    fi
 }
 
 function lapt__install_dependent_packages() {
