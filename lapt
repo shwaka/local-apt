@@ -9,7 +9,7 @@ LAPT_DOWNLOADS=$($ldpkg get_dir)/lapt_downloads
 export LAPT_LOG_LEVEL=${LAPT_LOG_LEVEL-0}
 
 declare -a public_commands private_commands
-public_commands=(install finstall install_deb)
+public_commands=(install)
 private_commands=(list_commands) # available, but not shown in list_commands
 
 source $lapt_dir/color_palette
@@ -32,18 +32,25 @@ if [ $# = 0 ]; then
 fi
 
 command=$1
-shift
-
 if ! accept_command "$command"; then
     echo "Invalid command" >&2
 fi
 
-command_install=install
-if [ "$command" == finstall ]; then
-    # 主にテスト用
-    command=install
-    command_install=finstall
-    FORCE_INSTALL=true
-fi
+shift
+
+OPT_FORCE_INSTALL=false
+OPT_INSTALL_FROM_DEB=false
+OPTARG_DEB_FILENAME=
+while getopts fd: OPT; do
+    case $OPT in
+        f) OPT_FORCE_INSTALL=true;;
+        d) OPT_INSTALL_FROM_DEB=true
+           OPTARG_DEB_FILENAME=$OPTARG;;
+        \?) echo ERROR
+            exit 1;;
+    esac
+done
+
+shift $((OPTIND - 1))
 
 lapt_"$command" "$@"
