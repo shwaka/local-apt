@@ -1,0 +1,169 @@
+#!/bin/bash
+
+function lapt__get_filename() {
+    # https://askubuntu.com/questions/785114/how-to-get-the-download-file-name-of-apt-get-download
+    local tempdir=.lapt_temp
+    if [ -e $tempdir ]; then
+        if [ -d $tempdir -a -z "$(ls -A "$tempdir")" ]; then
+            rmdir "$tempdir"
+        else
+            $log "${RED}[Error]${ENDCOLOR}: $(pwd)/$tempdir already exists. Remove it."
+            return 1
+        fi
+    fi
+    (
+        # ファイル名が一致するものがカレントディレクトリにある場合には，
+        # --print-uris は何も表示しないっぽい．
+        # なので，一時ディレクトリに退避する．
+        # (サブシェルは必要ない気がするけど，カレントディレクトリを変更したくないので念のため)
+        mkdir $tempdir
+        cd $tempdir
+        local filename=$(apt-get download $package_name --print-uris |
+                             awk '{print $2}')
+        echo $filename
+        cd ..
+        rmdir $tempdir
+    )
+}
+
+function lapt__install_a_package() {
+    # $1 は，バージョン条件を含まない，単一のパッケージ名
+    # 前後の空白とかも予め除去しておく必要がある
+    # OK: lapt__install_a_package libtiff5
+    # NG: lapt__install_a_package " libtiff5 "
+    # NG: lapt__install_a_package "libtiff5 (= 4.0.9-5ubuntu0.3)"
+    # NG: lapt__install_a_package "libc6-dev | libc-dev"
+    local package_name=$1
+    if $ldpkg is_installed $package_name && [ "${FORCE_INSTALL-}" != true ]; then
+        $ldpkg show $package_name
+        return 0
+    fi
+    mkdir -p "$LAPT_DOWNLOADS"
+    cd "$LAPT_DOWNLOADS"
+    local filename=$(lapt__get_filename $package_name)
+    if [ -z "$filename" ]; then
+        $log "{RED}[Error]${ENDCOLOR} Package not found: $package_name" >&2
+        return 1
+    fi
+    if [ -e $filename ]; then
+        $log "Using ${filename} which already exists"
+    else
+        $log "Downloading ${filename}..."
+        apt-get download $package_name
+    fi
+    lapt_install_deb "$filename"
+}
+
+function lapt_install_deb() {
+    local filename=$1
+    lapt__install_dependent_packages "$filename" || return 1
+    # ↑何故か set -e が効いてないので，|| return 1 は必須
+    ldpkg $command_install "$filename"
+}
+
+function lapt__install_dependent_packages() {
+    # TODO: install "Recommends"?
+    local filename=$1
+    local dep_str=$(dpkg -I "$filename" |
+                        grep "^ *Depends:" |
+                        sed -e "s/^ *Depends: *//")
+    local package_name=$(ldpkg get_package_name "$filename")
+    $log -e "Dependencies for $package_name:\n  $dep_str"
+    local dep_array
+    IFS=',' read -ra dep_array <<< "$dep_str"
+    if [ -n "${dep_array+x}" ]; then
+        # dep_array が定義されているときに以下を実行
+        # 補足: read -ra は， "$dep_str" が空文字列のときは dep_array を unset する
+        local orig_LAPT_LOG_LEVEL=$LAPT_LOG_LEVEL
+        local success=true
+        LAPT_LOG_LEVEL=$((LAPT_LOG_LEVEL+1))
+        local package_candidates # これがないと，for loop の変数が関数外に漏れる
+        for package_candidates in "${dep_array[@]}"; do
+            # package_candidates: " hoge (= 1.1) | fuga "
+            # ↓lapt finstall automake で無限ループが発生したのでとりあえず無効
+            # $0 $command_install "$package_candidates"
+            $0 install "$package_candidates" || {
+                success=false
+                break
+                # ここで直接 return すると上手くいかない…何故？
+                # ともあれ，LAPT_LOG_LEVEL を元に戻す必要はある
+            }
+        done
+        LAPT_LOG_LEVEL=$orig_LAPT_LOG_LEVEL
+        if $success; then
+            return 0
+        else
+            return 1
+        fi
+    fi
+}
+
+# function virtual_to_real() {
+#     # virtual package name を real にする
+#     # TODO: ちゃんと検索する
+#     local package_name=$1
+#     case "$package_name" in
+#         libc-dev ) package_name=libc6-dev ;;
+#         libpng-dev ) package_name=libpng12-dev ;;
+#         libgmp10-dev ) package_name=libgmp-dev ;;
+#     esac
+#     echo $package_name
+# }
+
+function lapt__list_real_pkg() {
+    # https://serverfault.com/questions/364608/how-do-i-get-a-list-of-packages-that-provides-something-using-dpkg
+    local package_name=$1
+    if apt-cache show $package_name | grep "^Package: $package_name" > /dev/null 2> /dev/null; then
+        # $package_name 自身が
+        # real な (i.e. virtual でない) パッケージの場合
+        echo $package_name
+    fi
+    # $package_name を Provide するパッケージの一覧
+    # これって再帰的にやる必要ある？
+    apt-cache showpkg $package_name |
+        awk '/Pa/, /Reverse P/ {next} {print $1 | "sort -u"}'
+}
+
+function lapt_install() {
+    # Usage:
+    # lapt_install libtiff5
+    # lapt_install " libtiff5 (= 4.0.9-5ubuntu0.3) "
+    # lapt_install "libc6-dev | libc-dev"
+    local package_candidates=$1
+    $log "${GREEN}[Begin]${ENDCOLOR} Installing $package_candidates"
+    local package_array
+    # https://stackoverflow.com/questions/918886/how-do-i-split-a-string-on-a-delimiter-in-bash
+    IFS='|' read -ra package_array <<< "$package_candidates"
+    # TODO: こっちも package_array が定義されてるかチェックする？
+    for package_with_version in "${package_array[@]}"; do
+        # TODO: 複数の候補のうちの一つが失敗した時点でのメッセージどうする？
+        #       現状だと普通にエラーを表示してる．
+        local package_name=$(echo "$package_with_version" |
+                                 sed -e 's/^ *//' |
+                                 sed -e 's/(.*)//' |
+                                 sed -e 's/ *$//')
+        # https://fumiyas.github.io/2013/12/10/lastpipe.sh-advent-calendar.html
+        # shopt -s lastpipe
+        while read real_package_name; do
+            # ↓最初は set +e してたけど，install_a_package 内での処理に影響がありそうなのでやめた
+            lapt__install_a_package $real_package_name && {
+                # 一つでも install に成功したらそこで(正常)終了
+                set -e
+                if [ $package_name == $real_package_name ]; then
+                    $log "[End] Successfully installed $real_package_name"
+                else
+                    $log "[End] Successfully installed $real_package_name, which provides $package_name"
+                fi
+                return 0
+            }
+        done < <(lapt__list_real_pkg $package_name)
+    done
+    # 全ての候補で install に失敗したらエラーを吐く
+    $log "[End] failed to install any of the following"
+    $log "  $package_candidates"
+    return 1
+}
+
+function lapt_list_commands() {
+    echo "${public_commands[@]}"
+}
