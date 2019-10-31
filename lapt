@@ -46,7 +46,7 @@ while getopts fd: OPT; do
         f) OPT_FORCE_INSTALL=true;;
         d) OPT_INSTALL_FROM_DEB=true
            OPTARG_DEB_FILENAME=$OPTARG;;
-        \?) echo ERROR
+        \?) echo "Invalid option"
             exit 1;;
     esac
 done

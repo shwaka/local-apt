@@ -100,7 +100,7 @@ function ldpkg_install() {
         exit 1
     fi
     local package_name=$(get_package_name "$debfile")
-    if is_installed $package_name && [ "${FORCE_INSTALL-}" != true ]; then
+    if (! $OPT_FORCE_INSTALL) && is_installed $package_name; then
         ldpkg_show $package_name
         return 0
     fi
@@ -165,10 +165,15 @@ fi
 command=$1
 shift
 
-if [ "$command" == finstall ]; then
-    # 主にテスト用
-    command=install
-    FORCE_INSTALL=true
-fi
+OPT_FORCE_INSTALL=false
+while getopts f OPT; do
+    case $OPT in
+        f) OPT_FORCE_INSTALL=true;;
+        \?) echo "Invalid option"
+            exit 1;;
+    esac
+done
+
+shift $((OPTIND - 1))
 
 ldpkg_"$command" "$@"
