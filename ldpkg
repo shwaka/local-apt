@@ -3,7 +3,7 @@
 set -eu
 
 lapt_dir=$(dirname $(readlink -f $0))
-log=$lapt_dir/lapt-log
+log=$lapt_dir/lapt_log
 
 LDPKG_DIR=${LDPKG_DIR-$HOME/.ldpkg}
 if [ ! -d "$LDPKG_DIR" ]; then
