@@ -1,6 +1,6 @@
 # Requirements
 - `apt` (and hence `dpkg`)
-
+- `bash`
 
 # Installation
 ```bash
@@ -14,6 +14,7 @@ Add the following lines to your `.bashrc` (or something similar).
 
 ```bash
 export LDPKG_DIR=$HOME/.ldpkg
+export PATH=$HOME/.ldpkg/usr/bin:$PATH
 export C_INCLUDE_PATH="$LDPKG_DIR/usr/include:$LDPKG_DIR/usr/include/x86_64-linux-gnu"
 export CFLAGS="-I$LDPKG_DIR/usr/include"
 export LDFLAGS="-L$LDPKG_DIR/usr/lib -L$LDPKG_DIR/usr/lib/x86_64-linux-gnu"
