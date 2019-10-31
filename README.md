@@ -59,8 +59,11 @@ Depends だけじゃなくて Recommends もインストールする
 ## 最初にインストール済みかどうかチェック
 依存関係を確認/解決する前に，そもそもの目的のパッケージがインストール済みかどうか確認する
 
-## オプション
-以下のコマンドはオプションを使って処理
-- `finstall` → `install -f`
-- `install_deb hoge.deb` → `install -d hoge.deb`
-その恩恵として， `install -f -d hoge.deb` も実装できる
+## Provides
+- `.deb` ファイルにより provide されている仮想パッケージも，
+  `ldpkg` 内の関数 `mark_installed` で記録する．
+  `mark_installed` の引数は `.deb` ファイル名にすると良い？
+- `is_installed_globally` でも仮想パッケージもチェックする．
+
+## refactoring
+`lapt__install_apt` がゴチャゴチャしてる．
