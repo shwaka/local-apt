@@ -67,3 +67,10 @@ Depends だけじゃなくて Recommends もインストールする
 
 ## refactoring
 `lapt__install_apt` がゴチャゴチャしてる．
+
+# メモ
+## .deb パッケージの名前に利用できる文字
+[5. Control files and their fields — Debian Policy Manual v4.4.1.1](https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-source)
+の "5.6.1 Source" 内:
+
+> Package names (both source and binary, see Package) must consist only of lower case letters (a-z), digits (0-9), plus (+) and minus (-) signs, and periods (.). They must be at least two characters long and must start with an alphanumeric character.
