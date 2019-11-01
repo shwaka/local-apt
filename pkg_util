@@ -67,12 +67,17 @@ function pu_list_real_pkg() {
 function pu_split_pkg_candidates() {
     # Usage:
     #   pu_split_pkg_candidates " foo (= 1.1.2) | bar "
+    #   pu_split_pkg_candidates ""  # -> (empty output)
     # Output:
     #   newline-separated list of package names
     local pkg_candidates=$1
+    local separator=${2-|}
+    if echo "$pkg_candidates" | grep '^ *$' >/dev/null 2>/dev/null; then
+        return 0
+    fi
     local -a pkg_array
     # https://stackoverflow.com/questions/918886/how-do-i-split-a-string-on-a-delimiter-in-bash
-    IFS='|' read -ra pkg_array <<< "$pkg_candidates"
+    IFS=$separator read -ra pkg_array <<< "$pkg_candidates"
     # TODO: こっちも package_array が定義されてるかチェックする？
     for pkg_with_version in "${pkg_array[@]}"; do
         # TODO: version を取り除くかどうかは，オプションで指定できた方が良い？
