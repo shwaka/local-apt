@@ -112,29 +112,23 @@ function lapt__install_apt() {
     # lapt__install_apt "libc6-dev | libc-dev"
     local package_candidates=$1
     $log "${GREEN}[Begin]${ENDCOLOR} Installing $package_candidates"
-    local package_array
-    # https://stackoverflow.com/questions/918886/how-do-i-split-a-string-on-a-delimiter-in-bash
-    IFS='|' read -ra package_array <<< "$package_candidates"
-    # TODO: こっちも package_array が定義されてるかチェックする？
-    for package_with_version in "${package_array[@]}"; do
+    local package_name
+    for package_name in $($pkg_util extract_pkg_name "$package_candidates"); do
+        # ↑version 情報が既に取り除かれたものにしておく
         # TODO: 複数の候補のうちの一つが失敗した時点でのメッセージどうする？
         #       現状だと普通にエラーを表示してる．
-        local package_name=$($pkg_util extract_pkg_name "$package_with_version")
-        # https://fumiyas.github.io/2013/12/10/lastpipe.sh-advent-calendar.html
-        # shopt -s lastpipe
-        while read real_package_name; do
+        for real_pkg_name in $($pkg_util list_real_pkg $package_name); do
             # ↓最初は set +e してたけど，install_a_package 内での処理に影響がありそうなのでやめた
-            lapt__install_a_package $real_package_name && {
+            lapt__install_a_package $real_pkg_name && {
                 # 一つでも install に成功したらそこで(正常)終了
-                set -e
-                if [ $package_name == $real_package_name ]; then
-                    $log "[End] Successfully installed $real_package_name"
+                if [ $package_name == $real_pkg_name ]; then
+                    $log "[End] Successfully installed $real_pkg_name"
                 else
-                    $log "[End] Successfully installed $real_package_name, which provides $package_name"
+                    $log "[End] Successfully installed $real_pkg_name, which provides $package_name"
                 fi
                 return 0
             }
-        done < <($pkg_util list_real_pkg $package_name)
+        done
     done
     # 全ての候補で install に失敗したらエラーを吐く
     $log "[End] failed to install any of the following"
