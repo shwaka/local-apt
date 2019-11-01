@@ -34,19 +34,8 @@ ldpkg install foo.deb
 (e.g. `openjdk-8-jre-headless`, `ca-certificates-java`)
 インストール予定のものを記憶しておけばok．
 
-## or での依存の場合
-現状では，Depends が `hoge | fuga` のときは
-
-1. `hoge` のインストールを試みる
-2. それに失敗したら `fuga` のインストールを試みる
-
-という手順になっているが，先に「どちらかがインストール済み」かをチェックした方が良さそう
-
 ## Recommends のインストール
 Depends だけじゃなくて Recommends もインストールする
-
-## message の改善
-- インストール済みの場合にもいちいち `[Begin]` `[End]` と出るのは邪魔
 
 ## version もちゃんとチェックする
 具体例(`libgmpxx4ldbl`)
@@ -64,9 +53,7 @@ Depends だけじゃなくて Recommends もインストールする
   `ldpkg` 内の関数 `mark_installed` で記録する．
   `mark_installed` の引数は `.deb` ファイル名にすると良い？
 - `is_installed_globally` でも仮想パッケージもチェックする．
-
-## refactoring
-`lapt__install_apt` がゴチャゴチャしてる．
+  ↑これは `apt-cache` に依存するから，`ldpkg` でやるのは変かも？
 
 # メモ
 ## .deb パッケージの名前に利用できる文字
