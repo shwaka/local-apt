@@ -118,7 +118,7 @@ function lapt__install_apt() {
     fi
     $log "${GREEN}[Begin]${ENDCOLOR} Installing $pkg_candidates"
     local pkg_name
-    for pkg_name in $($pkg_util extract_pkg_name "$pkg_candidates"); do
+    for pkg_name in $($pkg_util split_pkg_candidates "$pkg_candidates"); do
         # ↑version 情報が既に取り除かれたものにしておく
         # TODO: 複数の候補のうちの一つが失敗した時点でのメッセージどうする？
         #       現状だと普通にエラーを表示してる．

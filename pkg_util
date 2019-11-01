@@ -33,7 +33,7 @@ function pu_extract_pkg_name() {
     #   pu_extract_pkg_name " libtiff5 (= 4.0.9-5ubuntu0.3) "
     local pkg_name_with_version=$1
     if ! pu_validate "$pkg_name_with_version" version; then
-        $log "${RED}[Error]${ENDCOLOR} Invalid package name in pu_extract_pkg_name"
+        $log "${RED}[Error]${ENDCOLOR} Invalid package name in pu_extract_pkg_name: '$pkg_name_with_version'"
         exit 1
     fi
     local pkg_name=$(echo "$pkg_name_with_version" |
