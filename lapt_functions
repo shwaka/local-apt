@@ -111,6 +111,11 @@ function lapt__install_apt() {
     # lapt__install_apt " libtiff5 (= 4.0.9-5ubuntu0.3) "
     # lapt__install_apt "libc6-dev | libc-dev"
     local pkg_candidates=$1
+    if ! $OPT_FORCE_INSTALL && $pkg_util is_installed "$pkg_candidates"; then
+        # TODO: 具体的にどれがinstalled?
+        $log "Already installed: $pkg_candidates"
+        exit 0
+    fi
     $log "${GREEN}[Begin]${ENDCOLOR} Installing $pkg_candidates"
     local pkg_name
     for pkg_name in $($pkg_util extract_pkg_name "$pkg_candidates"); do
