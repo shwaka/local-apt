@@ -94,6 +94,23 @@ function pu_is_installed() {
     return 1
 }
 
+function pu_showpkg() {
+    # Usage:
+    #   pu_showpkg libtiff5
+    local pkg_name=$1
+    for real_pkg_name in $(pu_list_real_pkg $pkg_name); do
+        if $ldpkg is_installed_locally $real_pkg_name; then
+            $log "The package ${package_name} is already installed locally."
+        fi
+        if $ldpkg is_installed_globally $real_pkg_name; then
+            $log "The package ${package_name} is already installed globally."
+        fi
+        if ! $ldpkg is_installed $real_pkg_name; then
+            $log "The package ${package_name} is not installed yet."
+        fi
+   done
+}
+
 command=$1
 shift
 pu_"$command" "$@"

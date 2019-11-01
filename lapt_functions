@@ -37,8 +37,8 @@ function lapt__install_a_package() {
     # NG: lapt__install_a_package "libtiff5 (= 4.0.9-5ubuntu0.3)"
     # NG: lapt__install_a_package "libc6-dev | libc-dev"
     local package_name=$1
-    if $ldpkg is_installed $package_name && [ "${OPT_FORCE_INSTALL-}" != true ]; then
-        $ldpkg show $package_name
+    if $pkg_util is_installed $package_name && [ "${OPT_FORCE_INSTALL-}" != true ]; then
+        $pkg_util showpkg $package_name
         return 0
     fi
     mkdir -p "$LAPT_DOWNLOADS"
