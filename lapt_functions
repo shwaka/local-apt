@@ -110,21 +110,21 @@ function lapt__install_apt() {
     # lapt__install_apt libtiff5
     # lapt__install_apt " libtiff5 (= 4.0.9-5ubuntu0.3) "
     # lapt__install_apt "libc6-dev | libc-dev"
-    local package_candidates=$1
-    $log "${GREEN}[Begin]${ENDCOLOR} Installing $package_candidates"
-    local package_name
-    for package_name in $($pkg_util extract_pkg_name "$package_candidates"); do
+    local pkg_candidates=$1
+    $log "${GREEN}[Begin]${ENDCOLOR} Installing $pkg_candidates"
+    local pkg_name
+    for pkg_name in $($pkg_util extract_pkg_name "$pkg_candidates"); do
         # ↑version 情報が既に取り除かれたものにしておく
         # TODO: 複数の候補のうちの一つが失敗した時点でのメッセージどうする？
         #       現状だと普通にエラーを表示してる．
-        for real_pkg_name in $($pkg_util list_real_pkg $package_name); do
+        for real_pkg_name in $($pkg_util list_real_pkg $pkg_name); do
             # ↓最初は set +e してたけど，install_a_package 内での処理に影響がありそうなのでやめた
             lapt__install_a_package $real_pkg_name && {
                 # 一つでも install に成功したらそこで(正常)終了
-                if [ $package_name == $real_pkg_name ]; then
+                if [ $pkg_name == $real_pkg_name ]; then
                     $log "[End] Successfully installed $real_pkg_name"
                 else
-                    $log "[End] Successfully installed $real_pkg_name, which provides $package_name"
+                    $log "[End] Successfully installed $real_pkg_name, which provides $pkg_name"
                 fi
                 return 0
             }
@@ -132,7 +132,7 @@ function lapt__install_apt() {
     done
     # 全ての候補で install に失敗したらエラーを吐く
     $log "[End] failed to install any of the following"
-    $log "  $package_candidates"
+    $log "  $pkg_candidates"
     return 1
 }
 
@@ -140,8 +140,8 @@ function lapt_install() {
     if $OPT_INSTALL_FROM_DEB; then
         lapt__install_deb "$OPTARG_DEB_FILENAME"
     else
-        local package_candidates="$1"
-        lapt__install_apt "$@"
+        local pkg_candidates="$1"
+        lapt__install_apt "$pkg_candidates"
     fi
 }
 
