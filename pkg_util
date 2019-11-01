@@ -59,7 +59,7 @@ function pu_is_installed() {
     # Usage:
     #   pu_is_installed " foo (= 1.1.2) | bar "
     local pkg_candidates=$1
-    for pkg_name in $(pu_extract_pkg_name "$pkg_candidates"); do
+    for pkg_name in $(pu_split_pkg_candidates "$pkg_candidates"); do
         for real_pkg_name in $(pu_list_real_pkg $pkg_name); do
             if $ldpkg is_installed $real_pkg_name; then
                 return 0
