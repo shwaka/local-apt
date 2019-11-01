@@ -33,6 +33,9 @@ ldpkg install foo.deb
 パッケージが相互に依存している場合がある．
 (e.g. `openjdk-8-jre-headless`, `ca-certificates-java`)
 インストール予定のものを記憶しておけばok．
+- `openjdk-8-jre-headless` のインストールに失敗する．
+  リンク先が `/etc/...` なのが原因？
+  `fix_links` が相対パスを想定している？
 
 ## Recommends のインストール
 Depends だけじゃなくて Recommends もインストールする
