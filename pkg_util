@@ -1,0 +1,39 @@
+#! /bin/bash
+
+function pu_extract_pkg_name() {
+    # Usage:
+    #   pu_extract_pkg_name libtiff5
+    #   pu_extract_pkg_name " libtiff5 (= 4.0.9-5ubuntu0.3) "
+    local package_name_with_version=$1
+    local package_name=$(echo "$package_name_with_version" |
+                             sed -e 's/(.*)//' |
+                             sed -e 's/^ *//' |
+                             sed -e 's/ *$//')
+    echo $package_name
+}
+
+function pu_list_real_pkg() {
+    # Usage:
+    #   pu_list_real_pkg httpd
+    #   pu_list_real_pkg " libtiff5 (= 4.0.9-5ubuntu0.3) "
+    # Output:
+    #   newline-separated list of real packages
+    # Reference:
+    #   https://serverfault.com/questions/364608/how-do-i-get-a-list-of-packages-that-provides-something-using-dpkg
+    local package_name_with_version=$1
+    local package_name=$(pu_extract_pkg_name "$package_name_with_version")
+    if apt-cache show $package_name | grep "^Package: $package_name" > /dev/null 2> /dev/null; then
+        # $package_name 自身が
+        # real な (i.e. virtual でない) パッケージの場合
+        echo $package_name
+    fi
+    # $package_name を Provide するパッケージの一覧
+    # これって再帰的にやる必要ある？
+    apt-cache showpkg $package_name |
+        awk '/Pa/, /Reverse P/ {next} {print $1 | "sort -u"}'
+}
+
+
+command=$1
+shift
+pu_"$command" "$@"

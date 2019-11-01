@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# loaded from lapt
+# see lapt for definitions of variables
+
 function lapt__get_filename() {
     # https://askubuntu.com/questions/785114/how-to-get-the-download-file-name-of-apt-get-download
     local tempdir=.lapt_temp
@@ -102,32 +105,6 @@ function lapt__install_dependent_packages() {
     fi
 }
 
-# function virtual_to_real() {
-#     # virtual package name を real にする
-#     # TODO: ちゃんと検索する
-#     local package_name=$1
-#     case "$package_name" in
-#         libc-dev ) package_name=libc6-dev ;;
-#         libpng-dev ) package_name=libpng12-dev ;;
-#         libgmp10-dev ) package_name=libgmp-dev ;;
-#     esac
-#     echo $package_name
-# }
-
-function lapt__list_real_pkg() {
-    # https://serverfault.com/questions/364608/how-do-i-get-a-list-of-packages-that-provides-something-using-dpkg
-    local package_name=$1
-    if apt-cache show $package_name | grep "^Package: $package_name" > /dev/null 2> /dev/null; then
-        # $package_name 自身が
-        # real な (i.e. virtual でない) パッケージの場合
-        echo $package_name
-    fi
-    # $package_name を Provide するパッケージの一覧
-    # これって再帰的にやる必要ある？
-    apt-cache showpkg $package_name |
-        awk '/Pa/, /Reverse P/ {next} {print $1 | "sort -u"}'
-}
-
 function lapt__install_apt() {
     # Usage:
     # lapt__install_apt libtiff5
@@ -142,10 +119,7 @@ function lapt__install_apt() {
     for package_with_version in "${package_array[@]}"; do
         # TODO: 複数の候補のうちの一つが失敗した時点でのメッセージどうする？
         #       現状だと普通にエラーを表示してる．
-        local package_name=$(echo "$package_with_version" |
-                                 sed -e 's/^ *//' |
-                                 sed -e 's/(.*)//' |
-                                 sed -e 's/ *$//')
+        local package_name=$($pkg_util extract_pkg_name "$package_with_version")
         # https://fumiyas.github.io/2013/12/10/lastpipe.sh-advent-calendar.html
         # shopt -s lastpipe
         while read real_package_name; do
@@ -160,7 +134,7 @@ function lapt__install_apt() {
                 fi
                 return 0
             }
-        done < <(lapt__list_real_pkg $package_name)
+        done < <($pkg_util list_real_pkg $package_name)
     done
     # 全ての候補で install に失敗したらエラーを吐く
     $log "[End] failed to install any of the following"

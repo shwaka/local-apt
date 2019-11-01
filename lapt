@@ -5,6 +5,7 @@ set -eu
 lapt_dir=$(dirname $(readlink -f $0))
 ldpkg=$lapt_dir/ldpkg
 log=$lapt_dir/lapt_log
+pkg_util=$lapt_dir/pkg_util
 LAPT_DOWNLOADS=$($ldpkg get_dir)/lapt_downloads
 export LAPT_LOG_LEVEL=${LAPT_LOG_LEVEL-0}
 
