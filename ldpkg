@@ -52,22 +52,52 @@ function fix_links() {
     local root_dest=$2          # 最終的なコピー先
     local root_orig=$(cd $root_orig_rel ; pwd -P)
     local unfixed_links=""
+    local link
     for link in $(find "$root_orig" -type l); do
         if [ ! -e "$link" ]; then
             # symlink が壊れていたら
-            local link_target=$(readlink -m $link)
-            # echo -e "Broken link $link\n  to $link_target"
-            local link_target_rel=$(realpath -m --relative-to="$root_orig" "$link_target")
-            local alternative_link_target=/$link_target_rel
-            local target_in_dest=$root_dest/$link_target_rel
-            if [ -e $target_in_dest ]; then
-                # コピー先にもともとあるなら問題ない
-                :
-            elif [ -e "$alternative_link_target" ]; then
-                # /usr/lib 的なところにリンク先を見つけた場合
-                # $log -e "Fix link: $link"
-                ln -nfs "$alternative_link_target" "$link"
+            local target_in_dest
+            local target_in_system
+            local target_orig=$(readlink $link)
+            local link_fixed=null
+            if [[ "$target_orig" =~ ^/ ]]; then
+                # full path のとき
+                target_in_system=$target_orig # /usr/lib 的なfull path
+                target_in_dest=$root_dest$target_orig # ~/.ldpkg/usr/lib 的な場所
+                target_in_dest_before_move=$root_orig$target_orig # $target_in_dest に移動される予定のファイル
+                # $log "...$target_orig"
+                # $log "   $target_in_system"
+                # $log "   $target_in_dest"
+                if [ -e "$target_in_system" ]; then
+                    # system ファイルを full path で指定してるので問題ない
+                    :
+                    link_fixed=true
+                elif [ -e "$target_in_dest" -o "$target_in_dest_before_move" ]; then
+                    ln -nfs "$target_in_dest" "$link"
+                    link_fixed=true
+                else
+                    link_fixed=false
+                fi
             else
+                # relative path のとき
+                local link_target=$(readlink -m $link)
+                # echo -e "Broken link $link\n  to $link_target"
+                local link_target_rel=$(realpath -m --relative-to="$root_orig" "$link_target")
+                target_in_system=/$link_target_rel
+                target_in_dest=$root_dest/$link_target_rel
+                if [ -e "$target_in_dest" ]; then
+                    # コピー先にもともとあるなら問題ない
+                    link_fixed=true
+                elif [ -e "$target_in_system" ]; then
+                    # /usr/lib 的なところにリンク先を見つけた場合
+                    # $log -e "Fix link: $link"
+                    ln -nfs "$target_in_system" "$link"
+                    link_fixed=true
+                else
+                    link_fixed=false
+                fi
+            fi
+            if ! $link_fixed; then
                 # リンクの修正先が分からない場合
                 # 後でまとめてエラーを吐く
                 unfixed_links="${unfixed_links}  ${link}\n"
