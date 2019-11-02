@@ -1,3 +1,15 @@
+You can install `.deb` packages without root access (i.e. without `sudo`).
+
+- During installation, `lapt` resolves dependencies.
+  But the versions of dependent packages are ignored.
+- All packages are installed under your `$HOME` directory.
+  By default, `$HOME/.ldpkg/` pretends to be the root directory `/`.
+  This means that most libralies are installed to `$HOME/.ldpkg/usr/lib/`
+  and most executable files are installed to `$HOME/.ldpkg/usr/bin/`.
+- Targets of symbolic links and paths in `.pc` files (for pkgconfig) are edited
+  so that they give appropriate files or directories under `$HOME/.ldpkg`.
+
+
 # Requirements
 - `apt` (and hence `dpkg`)
 - `bash`
