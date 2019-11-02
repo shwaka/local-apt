@@ -105,9 +105,14 @@ function fix_links() {
         fi
     done
     if [ -n "$unfixed_links" ]; then
-        $log "[ldpkg] Error: The following links cannot be fixed:"
-        $log "$unfixed_links"
-        exit 1
+        if $OPT_ALLOW_UNFIXED_LINK; then
+            $log "[ldpkg] Warning: The following links were not fixed:"
+            $log "$unfixed_links"
+        else
+            $log "[ldpkg] Error: The following links cannot be fixed:"
+            $log "$unfixed_links"
+            exit 1
+        fi
     fi
 }
 
@@ -196,9 +201,11 @@ command=$1
 shift
 
 OPT_FORCE_INSTALL=false
-while getopts f OPT; do
+OPT_ALLOW_UNFIXED_LINK=false
+while getopts fu OPT; do
     case $OPT in
         f) OPT_FORCE_INSTALL=true;;
+        u) OPT_ALLOW_UNFIXED_LINK=true;;
         \?) echo "Invalid option"
             exit 1;;
     esac

@@ -41,12 +41,14 @@ shift
 
 OPT_FORCE_INSTALL=false
 OPT_INSTALL_FROM_DEB=false
+OPT_ALLOW_UNFIXED_LINK=false
 OPTARG_DEB_FILENAME=
-while getopts fd: OPT; do
+while getopts fd:u OPT; do
     case $OPT in
         f) OPT_FORCE_INSTALL=true;;
         d) OPT_INSTALL_FROM_DEB=true
            OPTARG_DEB_FILENAME=$OPTARG;;
+        u) OPT_ALLOW_UNFIXED_LINK=true;;
         \?) echo "Invalid option"
             exit 1;;
     esac
