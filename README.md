@@ -37,7 +37,11 @@ export LD_LIBRARY_PATH="$LDPKG_DIR/usr/lib:$LDPKG_DIR/usr/lib/x86_64-linux-gnu"
 # Usage
 ```bash
 lapt install <package-name>
+lapt inatall -f <package-name>  # install even if the package is already installed (locally or globally)
+lapt install -d foo.deb  # install dependent packages and then install foo.deb
+lapt install -u <package-name>  # allow symlinks to be unfixed
 ldpkg install foo.deb
+ldpkg install -f foo.deb
 ```
 
 # TODO
