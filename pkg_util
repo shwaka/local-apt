@@ -11,7 +11,8 @@ source $lapt_dir/color_palette
 function pu_validate() {
     local pkg_str=$1
     local type=$2
-    local re_name='[a-z0-9][a-z0-9+.-]*'
+    local re_arch='\(:[a-z0-9]*\)\?'
+    local re_name='[a-z0-9][a-z0-9+.-]*'$re_arch
     local re_ver='\(([^|]*)\)'
     # ↑下で ? をつけるので grouping しておく
     # ↑version 番号は | だけ除いておいて誤魔化す
@@ -31,15 +32,18 @@ function pu_extract_pkg_name() {
     # Usage:
     #   pu_extract_pkg_name libtiff5
     #   pu_extract_pkg_name " libtiff5 (= 4.0.9-5ubuntu0.3) "
+    #   pu_extract_pkg_name perl:any
     local pkg_name_with_version=$1
     if ! pu_validate "$pkg_name_with_version" version; then
         $log "${RED}[Error]${ENDCOLOR} Invalid package name in pu_extract_pkg_name: '$pkg_name_with_version'"
         exit 1
     fi
     local pkg_name=$(echo "$pkg_name_with_version" |
-                             sed -e 's/(.*)//' |
-                             sed -e 's/^ *//' |
-                             sed -e 's/ *$//')
+                         sed -e 's/(.*)//' | # remove version specification
+                         sed -e 's/^ *//' |
+                         sed -e 's/ *$//' |
+                         sed -e 's/:[a-z0-9]*//' # remove architecture name
+          )
     echo $pkg_name
 }
 
