@@ -1,0 +1,21 @@
+#compdef lapt
+
+_lapt () {
+    _arguments "1:commands:($(lapt list_commands))" \
+               "(2)-d[install from a .deb file]:.deb files:_files -g '*.deb(-.)'" \
+               "-f[force install]" \
+               "-u[allow unfixed link]" \
+               "(-d -f -u)2:packages:_lapt_complete_packages"
+}
+
+_lapt_complete_packages() {
+    local prefix_len=$(echo -n "$PREFIX" | wc -m)
+    local -a packages
+    if [ "$prefix_len" -ge 2 ]; then
+        packages=( $(apt-cache --generate pkgnames 2>/dev/null  | grep "^$PREFIX") )
+    else
+        _message "Input name of a package. You need at least 2 characters to complete."
+        packages=()
+    fi
+    compadd -a packages
+}
