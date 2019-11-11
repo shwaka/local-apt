@@ -7,15 +7,15 @@ Depends だけじゃなくて Recommends もインストールする
 - global には `2:5.1.3+dfsg-1ubuntu1` がインストール済み
 - 実際に必要なのは `2:6.1.2+dfsg-2`
 
-## apt-file
-`apt-file` の Depends にある `perl:any` って何？
-
 ## Provides
 - `.deb` ファイルにより provide されている仮想パッケージも，
   `ldpkg` 内の関数 `mark_installed` で記録する．
   `mark_installed` の引数は `.deb` ファイル名にすると良い？
 - `is_installed_globally` でも仮想パッケージもチェックする．
   ↑これは `apt-cache` に依存するから，`ldpkg` でやるのは変かも？
+
+## 複数のパッケージ
+`lapt install hoge fuga` で `hoge` と `fuga` を同時にインストール
 
 # メモ
 ## .deb パッケージの名前に利用できる文字
