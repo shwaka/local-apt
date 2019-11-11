@@ -14,9 +14,6 @@ Depends だけじゃなくて Recommends もインストールする
 - `is_installed_globally` でも仮想パッケージもチェックする．
   ↑これは `apt-cache` に依存するから，`ldpkg` でやるのは変かも？
 
-## 複数のパッケージ
-`lapt install hoge fuga` で `hoge` と `fuga` を同時にインストール
-
 # メモ
 ## .deb パッケージの名前に利用できる文字
 [5. Control files and their fields — Debian Policy Manual v4.4.1.1](https://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-source)

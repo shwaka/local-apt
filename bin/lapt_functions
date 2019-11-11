@@ -177,8 +177,10 @@ function lapt_install() {
     if $OPT_INSTALL_FROM_DEB; then
         lapt__install_deb "$OPTARG_DEB_FILENAME"
     else
-        local pkg_candidates="$1"
-        lapt__install_apt "$pkg_candidates"
+        local pkg_candidates
+        for pkg_candidates in "$@"; do
+            lapt__install_apt "$pkg_candidates"
+        done
     fi
 }
 
