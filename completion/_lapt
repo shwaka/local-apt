@@ -10,12 +10,6 @@ _lapt () {
 
 _lapt_complete_packages() {
     local prefix_len=$(echo -n "$PREFIX" | wc -m)
-    local -a packages
-    if [ "$prefix_len" -ge 2 ]; then
-        packages=( $(apt-cache --generate pkgnames 2>/dev/null  | grep "^$PREFIX") )
-    else
-        _message "Input name of a package. You need at least 2 characters to complete."
-        packages=()
-    fi
+    local -a packages=( $(apt-cache --generate pkgnames 2>/dev/null  | grep "^$PREFIX") )
     compadd -a packages
 }
