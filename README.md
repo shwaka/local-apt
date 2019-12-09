@@ -28,7 +28,8 @@ Add the following lines to your `.bashrc` (or something similar).
 export LDPKG_DIR=$HOME/.ldpkg
 export PATH=$LDPKG_DIR/usr/bin:$PATH
 export C_INCLUDE_PATH="$LDPKG_DIR/usr/include:$LDPKG_DIR/usr/include/x86_64-linux-gnu"
-export CFLAGS="-I$LDPKG_DIR/usr/include"
+export CFLAGS="-I$LDPKG_DIR/usr/include -I$LDPKG_DIR/usr/include/x86_64-linux-gnu"
+export CPPFLAGS=$CFLAGS
 export LDFLAGS="-L$LDPKG_DIR/usr/lib -L$LDPKG_DIR/usr/lib/x86_64-linux-gnu"
 export PKG_CONFIG_PATH="$LDPKG_DIR/usr/lib/x86_64-linux-gnu/pkgconfig:$LDPKG_DIR/usr/share/pkgconfig"
 export LD_LIBRARY_PATH="$LDPKG_DIR/usr/lib:$LDPKG_DIR/usr/lib/x86_64-linux-gnu"
