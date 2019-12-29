@@ -50,6 +50,7 @@ function mark_installed() {
 function fix_links() {
     local root_orig_rel=$1
     local root_dest=$2          # 最終的なコピー先
+    local debfile=$3            # 失敗した際のメッセージに使うだけ
     local root_orig=$(cd $root_orig_rel ; pwd -P)
     local unfixed_links=""
     local link
@@ -111,6 +112,14 @@ function fix_links() {
         else
             $log "[ldpkg] Error: The following links cannot be fixed:"
             $log "$unfixed_links"
+            local alternative_command
+            if [ -z "$OPT_PACKAGE_NAME" ]; then
+                alternative_command="ldpkg install -u $debfile"
+            else
+                alternative_command="lapt install -u $OPT_PACKAGE_NAME"
+            fi
+            $log "If you want to ignore the above links, please try:"
+            $log "  $alternative_command\n"
             exit 1
         fi
     fi
@@ -153,7 +162,7 @@ function ldpkg_install() {
     fi
     mkdir "$tempdir"
     dpkg -x "$debfile" "$tempdir"
-    fix_links "$tempdir" "$LDPKG_DIR"
+    fix_links "$tempdir" "$LDPKG_DIR" "$debfile"
     fix_pkgconfig "$tempdir" "$LDPKG_DIR"
     cp -rf "$tempdir"/* "$LDPKG_DIR"/
     rm -r "$tempdir"
@@ -202,10 +211,12 @@ shift
 
 OPT_FORCE_INSTALL=false
 OPT_ALLOW_UNFIXED_LINK=false
-while getopts fu OPT; do
+OPT_PACKAGE_NAME=
+while getopts fup: OPT; do
     case $OPT in
         f) OPT_FORCE_INSTALL=true;;
         u) OPT_ALLOW_UNFIXED_LINK=true;;
+        p) OPT_PACKAGE_NAME=$OPTARG;;
         \?) echo "Invalid option"
             exit 1;;
     esac
