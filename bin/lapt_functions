@@ -54,7 +54,7 @@ function lapt__install_a_package() {
         $log "Using ${filename} which already exists"
     else
         $log "Downloading ${filename}..."
-        apt-get download $package_name
+        apt-get download $package_name | $log_filter
     fi
     lapt__install_deb "$filename"
 }
